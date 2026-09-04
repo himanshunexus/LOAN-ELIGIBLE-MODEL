@@ -1,0 +1,195 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loanwise | Eligibility Check</title>
+    <style>
+        :root {
+            --navy-950: #071a2d;
+            --navy-900: #0b2742;
+            --navy-700: #164364;
+            --ink: #102334;
+            --muted: #647788;
+            --line: #d7e2e7;
+            --surface: #ffffff;
+            --canvas: #edf4f4;
+            --emerald: #07866e;
+            --emerald-dark: #056650;
+            --emerald-soft: #e1f4ee;
+            --amber: #a96d00;
+            --amber-soft: #fff2d1;
+            --red: #ba3e45;
+            --red-soft: #fde8e9;
+            --shadow: 0 24px 60px rgba(7, 26, 45, .14);
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            color: var(--ink);
+            background: var(--canvas);
+            font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+            line-height: 1.5;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            z-index: -1;
+            inset: 0 0 auto;
+            height: 330px;
+            background: var(--navy-950);
+            clip-path: polygon(0 0, 100% 0, 100% 76%, 72% 100%, 27% 83%, 0 95%);
+        }
+        .shell { width: min(1080px, calc(100% - 32px)); margin: 0 auto; padding: 52px 0 70px; }
+        .masthead { color: #fff; margin-bottom: 34px; animation: rise .55s ease both; }
+        .eyebrow { color: #71d7bc; font-size: .75rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+        h1 { margin: 7px 0 8px; font-family: Georgia, serif; font-size: clamp(2.2rem, 5vw, 4rem); font-weight: 400; letter-spacing: 0; line-height: 1.05; }
+        .intro { max-width: 560px; margin: 0; color: #bdd0dc; font-size: 1.04rem; }
+        .panel { overflow: hidden; border-radius: 8px; background: var(--surface); box-shadow: var(--shadow); animation: rise .7s .08s ease both; }
+        .panel-header { padding: 26px 32px 20px; border-bottom: 1px solid var(--line); }
+        .panel-header h2 { margin: 0 0 4px; font-size: 1.25rem; }
+        .panel-header p { margin: 0; color: var(--muted); font-size: .92rem; }
+        form { padding: 26px 32px 32px; }
+        .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 24px; }
+        .field label { display: block; margin-bottom: 7px; color: var(--navy-700); font-size: .82rem; font-weight: 700; }
+        input, select {
+            width: 100%; height: 46px; padding: 0 13px; border: 1px solid var(--line); border-radius: 4px;
+            color: var(--ink); background: #fbfdfd; font: inherit; font-size: .95rem; transition: border-color .2s, box-shadow .2s, background .2s;
+        }
+        input:focus, select:focus { outline: none; border-color: var(--emerald); background: #fff; box-shadow: 0 0 0 3px rgba(7, 134, 110, .14); }
+        .actions { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 30px; padding-top: 24px; border-top: 1px solid var(--line); }
+        .note { margin: 0; color: var(--muted); font-size: .8rem; }
+        button { min-width: 190px; height: 48px; border: 0; border-radius: 4px; color: #fff; background: var(--emerald); cursor: pointer; font: inherit; font-weight: 700; transition: background .2s, transform .2s, box-shadow .2s; }
+        button:hover { background: var(--emerald-dark); box-shadow: 0 8px 18px rgba(7, 134, 110, .24); transform: translateY(-1px); }
+        button:disabled { cursor: wait; opacity: .75; transform: none; }
+        button .spinner { display: none; width: 15px; height: 15px; margin-right: 8px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; vertical-align: -2px; animation: spin .7s linear infinite; }
+        button.loading .spinner { display: inline-block; }
+        .result { display: none; margin: 0 32px 32px; padding: 25px; border: 1px solid var(--line); border-radius: 6px; animation: reveal .4s ease both; }
+        .result.visible { display: block; }
+        .result.approved { border-color: #a9dfcf; background: var(--emerald-soft); }
+        .result.rejected { border-color: #efb7bb; background: var(--red-soft); }
+        .result.review { border-color: #efd79f; background: var(--amber-soft); }
+        .result.error { border-color: #efb7bb; background: var(--red-soft); }
+        .result-top { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+        .result h3 { margin: 0; font-family: Georgia, serif; font-size: 1.5rem; font-weight: 400; }
+        .badge { padding: 5px 10px; border-radius: 99px; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; }
+        .approved .badge { color: var(--emerald-dark); background: #c1eadf; }
+        .rejected .badge, .error .badge { color: #8e2d35; background: #f7c9cc; }
+        .review .badge { color: #795000; background: #ffe4a5; }
+        .result p { margin: 10px 0 0; color: #425969; }
+        .meter-wrap { margin-top: 22px; }
+        .meter-label { display: flex; justify-content: space-between; margin-bottom: 7px; color: var(--navy-700); font-size: .8rem; font-weight: 700; }
+        .meter { height: 9px; overflow: hidden; border-radius: 99px; background: rgba(16, 35, 52, .12); }
+        .meter span { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--emerald); transition: width .8s cubic-bezier(.2,.8,.2,1); }
+        .rejected .meter span { background: var(--red); }
+        .review .meter span { background: #d08a00; }
+        @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes reveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (max-width: 680px) {
+            body::before { height: 290px; clip-path: polygon(0 0, 100% 0, 100% 82%, 50% 100%, 0 89%); }
+            .shell { width: min(100% - 24px, 560px); padding-top: 32px; }
+            .masthead { margin-bottom: 25px; }
+            h1 { font-size: 2.55rem; }
+            .panel-header, form { padding-left: 20px; padding-right: 20px; }
+            .fields { grid-template-columns: 1fr; gap: 16px; }
+            .actions { align-items: stretch; flex-direction: column; }
+            button { width: 100%; }
+            .result { margin: 0 20px 20px; padding: 20px; }
+            .result-top { align-items: flex-start; flex-direction: column-reverse; }
+        }
+    </style>
+</head>
+<body>
+    <main class="shell">
+        <header class="masthead">
+            <div class="eyebrow">Loanwise decision desk</div>
+            <h1>Know where you stand.</h1>
+            <p class="intro">A quick, private estimate of your loan eligibility based on the details you provide.</p>
+        </header>
+
+        <section class="panel" aria-labelledby="form-title">
+            <div class="panel-header">
+                <h2 id="form-title">Application snapshot</h2>
+                <p>Complete the fields below to receive an instant assessment.</p>
+            </div>
+            <form id="loan-form" novalidate>
+                {% csrf_token %}
+                <div class="fields">
+                    <div class="field"><label for="Gender">Gender</label><select id="Gender" name="Gender" required><option value="">Select gender</option><option>Male</option><option>Female</option></select></div>
+                    <div class="field"><label for="Married">Married</label><select id="Married" name="Married" required><option value="">Select status</option><option>Yes</option><option>No</option></select></div>
+                    <div class="field"><label for="Dependents">Dependents</label><input id="Dependents" name="Dependents" type="number" min="0" max="3" step="1" placeholder="0" required></div>
+                    <div class="field"><label for="Education">Education</label><select id="Education" name="Education" required><option value="">Select education</option><option>Graduate</option><option>Not Graduate</option></select></div>
+                    <div class="field"><label for="Self_Employed">Self employed</label><select id="Self_Employed" name="Self_Employed" required><option value="">Select status</option><option>Yes</option><option>No</option></select></div>
+                    <div class="field"><label for="ApplicantIncome">Applicant income</label><input id="ApplicantIncome" name="ApplicantIncome" type="number" min="0" step="0.01" placeholder="e.g. 5000" required></div>
+                    <div class="field"><label for="CoapplicantIncome">Coapplicant income</label><input id="CoapplicantIncome" name="CoapplicantIncome" type="number" min="0" step="0.01" placeholder="e.g. 1500" required></div>
+                    <div class="field"><label for="LoanAmount">Loan amount</label><input id="LoanAmount" name="LoanAmount" type="number" min="0" step="0.01" placeholder="e.g. 140" required></div>
+                    <div class="field"><label for="Loan_Amount_Term">Loan term (months)</label><input id="Loan_Amount_Term" name="Loan_Amount_Term" type="number" min="0" step="0.01" placeholder="e.g. 360" required></div>
+                    <div class="field"><label for="Credit_History">Credit history</label><select id="Credit_History" name="Credit_History" required><option value="">Select history</option><option value="1.0">Good</option><option value="0.0">Bad</option></select></div>
+                    <div class="field"><label for="Property_Area">Property area</label><select id="Property_Area" name="Property_Area" required><option value="">Select area</option><option>Urban</option><option>Semiurban</option><option>Rural</option></select></div>
+                </div>
+                <div class="actions">
+                    <p class="note">This estimate is for guidance only and is not a lending decision.</p>
+                    <button id="submit-button" type="submit"><span class="spinner" aria-hidden="true"></span><span class="button-label">Check Eligibility</span></button>
+                </div>
+            </form>
+            <div id="result" class="result" role="status" aria-live="polite">
+                <div class="result-top"><h3 id="decision"></h3><span id="badge" class="badge"></span></div>
+                <p id="message"></p>
+                <div class="meter-wrap"><div class="meter-label"><span>Confidence</span><span id="confidence">0%</span></div><div class="meter"><span id="meter-fill"></span></div></div>
+            </div>
+        </section>
+    </main>
+    <script>
+        const form = document.getElementById("loan-form");
+        const button = document.getElementById("submit-button");
+        const result = document.getElementById("result");
+        const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
+
+        function showResult(data, type) {
+            result.className = `result visible ${type}`;
+            document.getElementById("decision").textContent = data.decision || "Unable to assess";
+            document.getElementById("badge").textContent = data.decision || "Error";
+            document.getElementById("message").textContent = data.message || data.error;
+            const confidence = Number(data.confidence) || 0;
+            document.getElementById("confidence").textContent = `${confidence.toFixed(1)}%`;
+            requestAnimationFrame(() => { document.getElementById("meter-fill").style.width = `${Math.min(100, confidence)}%`; });
+            result.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            if (!form.reportValidity()) return;
+            const data = Object.fromEntries(new FormData(form).entries());
+            data.Dependents = Number.parseInt(data.Dependents, 10);
+            data.ApplicantIncome = Number.parseFloat(data.ApplicantIncome);
+            data.CoapplicantIncome = Number.parseFloat(data.CoapplicantIncome);
+            data.LoanAmount = Number.parseFloat(data.LoanAmount);
+            data.Loan_Amount_Term = Number.parseFloat(data.Loan_Amount_Term);
+            data.Credit_History = Number.parseFloat(data.Credit_History);
+            button.disabled = true;
+            button.classList.add("loading");
+            button.querySelector(".button-label").textContent = "Checking...";
+            try {
+                const response = await fetch("/api/predict/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken },
+                    body: JSON.stringify(data)
+                });
+                const payload = await response.json();
+                if (!response.ok) throw new Error(payload.error || "Please check your details and try again.");
+                const type = payload.decision === "Approved" ? "approved" : payload.decision === "Rejected" ? "rejected" : "review";
+                showResult(payload, type);
+            } catch (error) {
+                showResult({ error: error.message, message: error.message }, "error");
+            } finally {
+                button.disabled = false;
+                button.classList.remove("loading");
+                button.querySelector(".button-label").textContent = "Check Eligibility";
+            }
+        });
+    </script>
+</body>
+</html>
