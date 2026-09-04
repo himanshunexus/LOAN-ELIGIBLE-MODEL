@@ -27,7 +27,7 @@ The model is a Random Forest classifier trained on the Kaggle Loan Prediction da
 
 
 ## Folder Structure
-'''
+```
 loan_project/
 ├── predictor/
 │   ├── ml_model/
@@ -43,7 +43,7 @@ loan_project/
 │   └── urls.py
 ├── train_pipeline.py
 └── manage.py
-'''
+```
 
 ## Setup
 
